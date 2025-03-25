@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jang.mtg.mapper.MtRoomMapper">
+
+    <!-- Meeting Room List Query -->
+    <select id="getMtRoomList" resultType="MtRoomVO">
+        SELECT * FROM meetingRoom ORDER BY mrNo DESC
+    </select>
+
+    <select id="getMtRoom" parameterType="int" resultType="MtRoomVO">
+        SELECT * FROM meetingRoom WHERE mrNo = #{mrNo}
+    </select>
+
+    <insert id="insertMtRoom" keyProperty="mrNo">
+        <selectKey keyProperty="mrNo" resultType="int" order="BEFORE">
+            SELECT COALESCE(MAX(mrNo), 0) + 1 AS mrNo FROM meetingRoom
+        </selectKey>
+        INSERT INTO meetingRoom 
+        (mrNo, mr_Name, start_Time, end_Time, capacity, location, building, roomNo, picture, first_Reg_ID)
+        VALUES 
+        (#{mrNo}, #{mr_Name}, #{start_Time}, #{end_Time}, #{capacity}, #{location}, #{building}, #{roomNo}, #{picture, jdbcType=VARCHAR}, #{first_Reg_ID, jdbcType=VARCHAR})
+    </insert>
+
+    <update id="updateMtRoom" parameterType="MtRoomVO">
+        UPDATE meetingRoom 
+        SET 
+            mr_Name = #{mr_Name}, 
+            start_Time = #{start_Time}, 
+            end_Time = #{end_Time}, 
+            capacity = #{capacity}, 
+            location = #{location}, 
+            building = #{building}, 
+            roomNo = #{roomNo}, 
+            picture = #{picture}
+        WHERE mrNo = #{mrNo}
+    </update>
+
+    <delete id="deleteMtRoom" parameterType="int">
+        DELETE FROM meetingRoom WHERE mrNo = #{mrNo}
+    </delete>
+
+    <!-- Meeting Room Reservation List Query -->
+    <select id="getMrReserveList" parameterType="MrResTimeVO" resultType="MrReserveVO">
+        SELECT * FROM mr_Reservation WHERE mrNo = #{mrNo} AND reserve_Day = #{reserve_Day}
+    </select>
+
+    <select id="getMrReserve" parameterType="int" resultType="MrReserveVO">
+        SELECT * FROM mr_Reservation WHERE reNo = #{reNo}
+    </select>
+
+    <insert id="insertMrReserve" keyProperty="reNo" parameterType="MrReserveVO">
+        <selectKey keyProperty="reNo" resultType="int" order="BEFORE">
+            SELECT COALESCE(MAX(reNo), 0) + 1 AS reNo FROM mr_Reservation
+        </selectKey>
+        INSERT INTO mr_Reservation 
+        (reNo, mrNo, bookerID, title, reserve_Day, reserve_Start, reserve_End, attendees, contents, first_Reg_ID)
+        VALUES 
+        (#{reNo}, #{mrNo}, #{bookerID}, #{title}, #{reserve_Day}, #{reserve_Start}, #{reserve_End}, #{attendees}, #{contents}, #{first_Reg_ID})
+    </insert>
+
+    <update id="updateMrReserve" parameterType="MrReserveVO">
+        UPDATE mr_Reservation 
+        SET 
+            mrNo = #{mrNo}, 
+            bookerID = #{bookerID}, 
+            title = #{title}, 
+            reserve_Day = #{reserve_Day}, 
+            reserve_Start = #{reserve_Start}, 
+            reserve_End = #{reserve_End}, 
+            attendees = #{attendees}, 
+            contents = #{contents}, 
+            first_Reg_ID = #{first_Reg_ID}
+        WHERE reNo = #{reNo}
+    </update>
+
+    <delete id="deleteMrReserve" parameterType="int">
+        DELETE FROM mr_Reservation WHERE reNo = #{reNo}
+    </delete>
+
+    <!-- Room Search by Name -->
+    <select id="searchMtRoomByName" parameterType="String" resultType="MtRoomVO">
+        SELECT * FROM meetingRoom WHERE mr_Name LIKE CONCAT('%', #{name}, '%')
+    </select>
+
+    <!-- Duplicate Check for Reservation Time -->
+    <select id="resDupCheck" parameterType="MrReserveVO" resultType="int">
+        SELECT count(*) 
+        FROM mr_Reservation
+        WHERE reserve_Day = #{reserve_Day}
+        AND mrNo = #{mrNo}
+        AND (
+            TO_NUMBER(reserve_Start) BETWEEN TO_NUMBER(#{reserve_Start}) + 1 AND TO_NUMBER(#{reserve_End}) - 1
+            OR TO_NUMBER(reserve_End) BETWEEN TO_NUMBER(#{reserve_Start}) + 1 AND TO_NUMBER(#{reserve_End}) - 1
+        )
+        <if test="reNo != null and reNo != ''">
+            <![CDATA[ AND reNo <> #{reNo} ]]>
+        </if>
+    </select>
+
+    <!-- Get Reservation by Time -->
+    <select id="getMrReserveByTime" parameterType="MrReserveVO" resultType="MrReserveVO">
+        SELECT * 
+        FROM mr_Reservation
+        WHERE mrNo = #{mrNo} 
+        AND reserve_Day = #{reserve_Day}
+        AND TO_NUMBER(#{reserve_Start}) >= TO_NUMBER(reserve_Start)
+        AND TO_NUMBER(reserve_End) >= TO_NUMBER(#{reserve_Start})
+    </select>
+
+</mapper>
